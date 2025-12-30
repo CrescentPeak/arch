@@ -17,8 +17,6 @@ cryptsetup luksFormat /dev/nvme0n1p3
 cryptsetup open /dev/nvme0n1p3 main
 mkfs.btrfs /dev/mapper/main
 
-mkdir -p /mnt /mnt/home /mnt/boot
-
 mount /dev/mapper/main /mnt
 cd /mnt
 btrfs subvolume create @
@@ -28,7 +26,9 @@ pwd
 umount /mnt
 
 mount -o noatime,ssd,compress=zstd,space_cache=v2,discard=async,subvol=@ /dev/mapper/main /mnt
+mkdir /mnt/home
 mount -o noatime,ssd,compress=zstd,space_cache=v2,discard=async,subvol=@home /dev/mapper/main /mnt/home
+mkdir /mnt/boot
 mount /dev/nvme0n1p1 /mnt/boot
 
 lsblk
