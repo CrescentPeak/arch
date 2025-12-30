@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+lsblk
+
+parted /dev/nvme0n1 mklabel gpt
+parted -a optimal /dev/nvme0n1 mkpart primary fat32 1MiB 1GiB
+parted /dev/nvme0n1 set 1 boot on
+mkfs.fat -F32 /dev/nvme0n1p1
+
+parted -a optimal /dev/nvme0n1 mkpart primary linux-swap 16GiB
+mkswap /dev/nvme0n1p2
+swapon /dev/nvme0n1p2
+
+parted -a optimal /dev/nvme0n1 mkpart primary 17GiB 100%
+cryptsetup luksFormat /dev/nvme0n1p3
+cryptsetup open /dev/nvme0n1p3 main
+mkfs.btrfs /dev/mapper/main
+
+mkdir -p /mnt /mnt/home /mnt/boot
+
+mount /dev/mapper/main /mnt
+cd /mnt
+btrfs subvolume create @
+btrfs subvolume create @home
+cd
+pwd
+umount /mnt
+
+mount -o noatime,ssd,compress=zstd,space_cache=v2,discard=async,subvol=@ /dev/mapper/main /mnt
+mount -o noatime,ssd,compress=zstd,space_cache=v2,discard=async,subvol=@home /dev/mapper/main /mnt/home
+mount /dev/nvme0n1p1 /mnt/boot
+
+lsblk
+
+pacstrap /mnt Base linux-lts linux-lts-headers linux-firmware nvim obsidian pacman-contrib fish base-devel btrfs-progs grub efibootmgr networkmanager git ufw nvidia-open-lts nvidia-utils grub-btrfs bluez bluez-utils pipewire pipewire-jack pipewire-pulse alsa-utils fastfetch kitty btrfs-assistant snapper snap-pac reflector sudo --needed
+
+genfstab -U -p /mnt >> /mnt/etc/fstab
+cat /mnt/etc/fstab
+
+arch-chroot /mnt
