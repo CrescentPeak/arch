@@ -8,7 +8,7 @@ parted -a optimal /dev/nvme0n1 mkpart primary fat32 1MiB 1GiB
 parted /dev/nvme0n1 set 1 boot on
 mkfs.fat -F32 /dev/nvme0n1p1
 
-parted -a optimal /dev/nvme0n1 mkpart primary linux-swap 16GiB
+parted -a optimal /dev/nvme0n1 mkpart primary linux-swap 1GiB 17GiB
 mkswap /dev/nvme0n1p2
 swapon /dev/nvme0n1p2
 
